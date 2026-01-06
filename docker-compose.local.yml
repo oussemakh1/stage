@@ -1,0 +1,47 @@
+version: '3.8'
+
+services:
+  app:
+    build:
+      context: .
+      dockerfile: docker/app/Dockerfile
+    container_name: laravel_app_test
+    ports:
+      - "8000:80"
+    volumes:
+      - .:/var/www/html
+    env_file:
+      - .env.testing
+    depends_on:
+      - mysql
+    networks:
+      - laravel
+
+  mysql:
+    image: mysql:8.0
+    container_name: laravel_mysql_test
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: laravel_test
+      MYSQL_USER: laravel
+      MYSQL_PASSWORD: password
+    networks:
+      - laravel
+
+  cypress:
+    image: cypress/included:13.17.0
+    container_name: cypress_runner
+    depends_on:
+      - app
+    working_dir: /e2e
+    volumes:
+      - .:/e2e
+    environment:
+      - CYPRESS_baseUrl=http://app
+    command: npx cypress run
+    networks:
+      - laravel
+
+networks:
+  laravel:
+    driver: bridge
